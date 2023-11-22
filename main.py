@@ -120,15 +120,16 @@ ORDER BY iter
 #take the best prediction
 labelmax='SELECT max(precision) FROM (' +  label + ')'
 
-
+# Function to check memory usuage
 def monitor_memory_usage(interval=1, duration=60):
     memory_usage = []
     for _ in range(int(duration / interval)):
         memory_info = psutil.virtual_memory()
         memory_usage.append(memory_info.used / (1024 * 1024))  # Convert to MB
         time.sleep(interval)
-    return memory_usage
+    return memory_usage #return list of all memory points
 
+#This is generate the pdf and graphs
 def plot_memory_usage(memory_usage, current_iteration, pdf_memory):
     plt.figure(figsize=(10, 6))
     plt.plot(memory_usage, label=f'Memory Usage during Iteration {current_iteration} (MB)')
