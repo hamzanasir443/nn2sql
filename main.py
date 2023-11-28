@@ -178,20 +178,23 @@ for atts in attss:
 # Close the PDF for memory graphs
 pdf_memory.close()
 
-# Plotting and saving the accuracy graph
-plt.figure(figsize=(10, 6))
-for atts in attss:
-    atts_results = [res for res in accuracy_results if res['atts'] == atts]
-    accuracies = [res['accuracy'] for res in atts_results]
-    plt.plot(accuracies, label=f'Attributes: {atts}')
-plt.xlabel('Experiment Number')
-plt.ylabel('Accuracy')
-plt.title('Accuracy vs. Varying Number of Attributes')
-plt.legend()
-plt.grid(True)
+accuracy_by_atts = {}
+for result in accuracy_results:
+    atts = result['atts']
+    accuracy = result['accuracy']
+    if atts not in accuracy_by_atts:
+        accuracy_by_atts[atts] = []
+    accuracy_by_atts[atts].append(accuracy)
 
-# Saving accuracy graph to PDF
-pdf_accuracy_path = 'accuracy_report.pdf'
-with PdfPages(pdf_accuracy_path) as pdf_accuracy:
-    pdf_accuracy.savefig(plt.gcf())
-plt.close()
+# Prepare data for box plot
+data_to_plot = [accuracies for accuracies in accuracy_by_atts.values()]
+labels = [str(atts) for atts in accuracy_by_atts.keys()]
+
+# Create and display the box plot
+plt.figure(figsize=(10, 6))
+plt.boxplot(data_to_plot, labels=labels)
+plt.xlabel('Number of Attributes')
+plt.ylabel('Accuracy')
+plt.title('Box Plot of Accuracies for Different Number of Attributes')
+plt.grid(True)
+plt.show()
