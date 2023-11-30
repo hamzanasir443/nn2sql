@@ -1,4 +1,6 @@
 import threading
+import pandas as pd
+
 from matplotlib.backends.backend_pdf import PdfPages
 import duckdb
 import matplotlib
@@ -178,23 +180,41 @@ for atts in attss:
 # Close the PDF for memory graphs
 pdf_memory.close()
 
-accuracy_by_atts = {}
+numpy_data = pd.read_csv('numpy_nn.csv')
+numpy_data.columns = numpy_data.columns.str.strip()
+print(numpy_data.head())
+print(numpy_data.columns)
+# File paths for saving PDFs
+numpy_pdf_path = 'numpy_error_rates.pdf'
+duckdb_pdf_path = 'duckdb_accuracies.pdf'
+
+# Creating and saving box plots for error rates in the NumPy data
+with PdfPages(numpy_pdf_path) as numpy_pdf:
+    plt.figure(figsize=(10, 6))
+    plt.boxplot([numpy_data[numpy_data['atts'] == atts]['error'] for atts in numpy_data['atts'].unique()], labels=numpy_data['atts'].unique())
+    plt.xlabel('Number of Attributes (NumPy)')
+    plt.ylabel('Error Rate')
+    plt.title('Box Plot of Error Rates for Different Attribute Counts (NumPy Implementation)')
+    plt.grid(True)
+    numpy_pdf.savefig()
+    plt.close()
+
+
+accuracy_by_atts_duckdb = {}
 for result in accuracy_results:
     atts = result['atts']
     accuracy = result['accuracy']
-    if atts not in accuracy_by_atts:
-        accuracy_by_atts[atts] = []
-    accuracy_by_atts[atts].append(accuracy)
+    if atts not in accuracy_by_atts_duckdb:
+        accuracy_by_atts_duckdb[atts] = []
+    accuracy_by_atts_duckdb[atts].append(accuracy)
 
-# Prepare data for box plot
-data_to_plot = [accuracies for accuracies in accuracy_by_atts.values()]
-labels = [str(atts) for atts in accuracy_by_atts.keys()]
-
-# Create and display the box plot
-plt.figure(figsize=(10, 6))
-plt.boxplot(data_to_plot, labels=labels)
-plt.xlabel('Number of Attributes')
-plt.ylabel('Accuracy')
-plt.title('Box Plot of Accuracies for Different Number of Attributes')
-plt.grid(True)
-plt.show()
+# Creating and saving box plots for DuckDB
+with PdfPages(duckdb_pdf_path) as duckdb_pdf:
+    plt.figure(figsize=(10, 6))
+    plt.boxplot([accuracy_by_atts_duckdb[atts] for atts in accuracy_by_atts_duckdb], labels=[str(atts) for atts in accuracy_by_atts_duckdb])
+    plt.xlabel('Number of Attributes (DuckDB)')
+    plt.ylabel('Accuracy')
+    plt.title('Box Plot of Accuracies (DuckDB Implementation)')
+    plt.grid(True)
+    duckdb_pdf.savefig()
+    plt.close()
