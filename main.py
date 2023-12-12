@@ -14,10 +14,10 @@ import time
 
 
 rep = 1
-sizes = [150, 300]
+sizes = [50 ,150, 300]
 attss = [20, 50]  # Varying this parameter to observe accuracy changes
 itss = [10, 100]
-learningrate = 0.01
+learning_rates = [0.001, 0.01,0.1]
 results = []
 
 createschema = '''
@@ -151,70 +151,53 @@ pdf_memory = PdfPages(pdf_memory_path)
 accuracy_results = []
 
 def benchmark(atts, limit, iterations, learning_rate, pdf_memory, iteration_number):
-    duckdb.sql(createschema)
-    for i in range(int(limit / 150)):
-        duckdb.sql(loadiris)
-    duckdb.sql(loadirisrel.format(limit))
-    duckdb.sql(weights.format(4, atts, atts, 3))
+    try:
+        print(f"Starting benchmark: atts={atts}, limit={limit}, iterations={iterations}, learning_rate={learning_rate}, iteration={iteration_number}")
 
-    loadtime = datetime.now()
-    start = datetime.now()
-    for i in range(rep):
-        memory_usage = monitor_memory_usage(interval=1, duration=60)
-        result = duckdb.sql(train.format(limit, limit, learning_rate, iterations) + labelmax).fetchall()
-        plot_memory_usage(memory_usage, iteration_number, pdf_memory)
+        duckdb.sql(createschema)
+        for i in range(int(limit / 150)):
+            duckdb.sql(loadiris)
+        duckdb.sql(loadirisrel.format(limit))
+        duckdb.sql(weights.format(4, atts, atts, 3))
 
-    time = (datetime.now() - start).total_seconds() / rep
-    accuracy = result[0][0] if result else None
-    accuracy_results.append({'atts': atts, 'limit': limit, 'iterations': iterations, 'accuracy': accuracy})
-    print("DuckDB-SQL-92,{},{},{},{},{},{}".format(atts, limit, learning_rate, iterations, time, accuracy))
+        start_time = datetime.now()
+        for _ in range(rep):
+            memory_usage = monitor_memory_usage(interval=1, duration=60)
+            result = duckdb.sql(train.format(limit, limit, learning_rate, iterations) + labelmax).fetchall()
+            plot_memory_usage(memory_usage, iteration_number, pdf_memory)
 
+        total_time = (datetime.now() - start_time).total_seconds() / rep
+        accuracy = result[0][0] if result else None
+        print(f"Completed benchmark: atts={atts}, limit={limit}, iterations={iterations}, learning_rate={learning_rate}, iteration={iteration_number}, accuracy={accuracy}, time={total_time}")
+        return accuracy, total_time
+
+    except Exception as e:
+        print(f"Error during benchmark: {e}")
+        return None, None
+
+accuracies_by_lr = {lr: [] for lr in learning_rates}
 
 iteration_counter = 1
-for atts in attss:
-    for size in sizes:
-        for iterations in itss:
-            benchmark(atts, size, iterations, learningrate, pdf_memory, iteration_counter)
-            iteration_counter += 1
+for lr in learning_rates:
+    print(f"Running benchmarks for learning rate: {lr}")
+    for atts in attss:
+        for size in sizes:
+            for iterations in itss:
+                accuracy, time_taken = benchmark(atts, size, iterations, lr, pdf_memory, iteration_counter)
+                if accuracy is not None:
+                    accuracies_by_lr[lr].append(accuracy)
+                iteration_counter += 1
 
-# Close the PDF for memory graphs
 pdf_memory.close()
 
-numpy_data = pd.read_csv('numpy_nn.csv')
-numpy_data.columns = numpy_data.columns.str.strip()
-print(numpy_data.head())
-print(numpy_data.columns)
-# File paths for saving PDFs
-numpy_pdf_path = 'numpy_error_rates.pdf'
 duckdb_pdf_path = 'duckdb_accuracies.pdf'
-
-# Creating and saving box plots for error rates in the NumPy data
-with PdfPages(numpy_pdf_path) as numpy_pdf:
-    plt.figure(figsize=(10, 6))
-    plt.boxplot([numpy_data[numpy_data['atts'] == atts]['error'] for atts in numpy_data['atts'].unique()], labels=numpy_data['atts'].unique())
-    plt.xlabel('Number of Attributes (NumPy)')
-    plt.ylabel('Error Rate')
-    plt.title('Box Plot of Error Rates for Different Attribute Counts (NumPy Implementation)')
-    plt.grid(True)
-    numpy_pdf.savefig()
-    plt.close()
-
-
-accuracy_by_atts_duckdb = {}
-for result in accuracy_results:
-    atts = result['atts']
-    accuracy = result['accuracy']
-    if atts not in accuracy_by_atts_duckdb:
-        accuracy_by_atts_duckdb[atts] = []
-    accuracy_by_atts_duckdb[atts].append(accuracy)
-
-# Creating and saving box plots for DuckDB
 with PdfPages(duckdb_pdf_path) as duckdb_pdf:
-    plt.figure(figsize=(10, 6))
-    plt.boxplot([accuracy_by_atts_duckdb[atts] for atts in accuracy_by_atts_duckdb], labels=[str(atts) for atts in accuracy_by_atts_duckdb])
-    plt.xlabel('Number of Attributes (DuckDB)')
-    plt.ylabel('Accuracy')
-    plt.title('Box Plot of Accuracies (DuckDB Implementation)')
-    plt.grid(True)
-    duckdb_pdf.savefig()
-    plt.close()
+    for lr, accuracies in accuracies_by_lr.items():
+        plt.figure(figsize=(10, 6))
+        plt.boxplot(accuracies, labels=[f'LR: {lr}'])
+        plt.xlabel('Experiment Number')
+        plt.ylabel('Accuracy')
+        plt.title(f'Box Plot of Accuracies for Learning Rate {lr} (DuckDB Implementation)')
+        plt.grid(True)
+        duckdb_pdf.savefig()
+        plt.close()
