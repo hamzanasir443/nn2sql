@@ -6,11 +6,15 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import psutil
 import time
+import logging
+
+# Set up logging
+logging.basicConfig(filename='mnist_duckdb.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
 
 
 rep=1
 limit=6000
-sizes=[2000,200,20,2]
+sizes=[200]
 attss=[20]
 learningrate=0.01
 
@@ -115,7 +119,6 @@ ORDER BY iter
 '''
 labelmax='SELECT max(precision) FROM (' +  label + ')'
 
-# Function to check memory usage
 def monitor_memory_usage(interval=1, duration=60):
     memory_usage = []
     for _ in range(int(duration / interval)):
@@ -124,7 +127,6 @@ def monitor_memory_usage(interval=1, duration=60):
         time.sleep(interval)
     return memory_usage
 
-# Function to plot memory usage
 def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory):
     plt.figure(figsize=(10, 6))
     plt.plot(memory_usage, label=f'Memory Usage - Atts: {atts}, Limit: {limit}, Iterations: {iterations}, LR: {learning_rate}')
@@ -136,35 +138,39 @@ def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_
     pdf_memory.savefig()  # Save the current figure to the PDF
     plt.close()  # Close the figure to free memory
 
-# Initializing PDF for memory graphs
 pdf_memory_path = 'memory_usage_mnist.pdf'
 pdf_memory = PdfPages(pdf_memory_path)
 
+def benchmark(atts, limit, iterations, learning_rate):
+    try:
+        logging.info("Starting benchmark")
+        duckdb.sql(createschema)
+        duckdb.sql(loadmnist)
+        duckdb.sql(loadmnist2)
+        duckdb.sql(loadmnistrel)
+        duckdb.sql(weights.format(784, atts, atts, 10))
+        loadtime = datetime.now()
+        start = datetime.now()
+        for i in range(rep):
+            # Start memory monitoring
+            memory_usage = monitor_memory_usage(interval=1, duration=60)
+            result = duckdb.sql(train.format(learning_rate, iterations) + labelmax).fetchall()
 
-def benchmark(atts,limit,iterations,learning_rate):
-	duckdb.sql(createschema)
-	duckdb.sql(loadmnist)
-	duckdb.sql(loadmnist2)
-	duckdb.sql(loadmnistrel)
-	duckdb.sql(weights.format(784,atts,atts,10))
-	loadtime = datetime.now()
-	start = datetime.now()
-	for i in range(rep):
-		# Start memory monitoring
-		memory_usage = monitor_memory_usage(interval=1, duration=60)
-		result = duckdb.sql(train.format(learning_rate,iterations) + labelmax).fetchall()
+            # Plot and save memory usage data
+            plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory)
 
-		# Plot and save memory usage data
-		plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory)
-
-	time=(datetime.now() - start).total_seconds()/rep
-	#name,atts,limit,lr,iter,execution_time,accuracy
-	print("DuckDB-SQL-92,{},{},{},{},{},{}".format(atts,limit,learning_rate,iterations,time,result[0][0]))
+        time_elapsed = (datetime.now() - start).total_seconds() / rep
+        #name, atts, limit, lr, iter, execution_time, accuracy
+        logging.info("Benchmark completed successfully")
+        print(f"DuckDB-SQL-92,{atts},{limit},{learning_rate},{iterations},{time_elapsed},{result[0][0]}")
+    except Exception as e:
+        logging.error(f"Error in benchmark: {e}")
 
 print("name,atts,limit,lr,iter,execution_time,accuracy")
 for atts in attss:
-	for size in sizes:
-		iterations=int(60/size)
-		benchmark(atts,size,iterations,learningrate)
+    for size in sizes:
+        iterations = int(60 / size)
+        logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
+        benchmark(atts, size, iterations, learningrate)
 
 pdf_memory.close()
