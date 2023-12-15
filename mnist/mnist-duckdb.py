@@ -9,6 +9,8 @@ import time
 import logging
 
 # Set up logging
+from nn2sql.main import pdf_memory
+
 logging.basicConfig(filename='mnist_duckdb.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
 
 
@@ -128,19 +130,26 @@ def monitor_memory_usage(interval=1, duration=60):
     return memory_usage
 
 # Function to plot memory usage
-def plot_memory_usage(memory_usage, current_iteration, pdf_memory):
-    plt.figure(figsize=(10, 6))
-    plt.plot(memory_usage, label=f'Memory Usage during Iteration {current_iteration} (MB)')
-    plt.xlabel('Time (seconds)')
-    plt.ylabel('Memory Usage (MB)')
-    plt.title(f'Memory Usage Over Time - Iteration {current_iteration}')
-    plt.legend()
-    plt.grid(True)
-    pdf_memory.savefig()  # Save the current figure to the PDF
-    plt.close()  # Close the figure to free memory
+def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory):
+    if memory_usage:  # Check if there is data to plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(memory_usage, label=f'Memory Usage - Atts: {atts}, Limit: {limit}, Iterations: {iterations}, LR: {learning_rate}')
+        plt.xlabel('Time (seconds)')
+        plt.ylabel('Memory Usage (MB)')
+        plt.title(f'Memory Usage Over Time')
+        plt.legend()
+        plt.grid(True)
+        pdf_memory.savefig()  # Save the current figure to the PDF
+        plt.close()
 
-pdf_memory_path = 'memory_usage_mnist.pdf'
-pdf_memory = PdfPages(pdf_memory_path)
+# ... [benchmark function and other code] ...
+
+# Before closing the PDF, check if any plots were added
+if pdf_memory.get_pagecount() > 0:
+    pdf_memory.close()
+else:
+    pdf_memory.close()
+    print("No plots were added to the PDF. The PDF file will be empty.")
 
 def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
     try:
