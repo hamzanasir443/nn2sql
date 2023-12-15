@@ -9,10 +9,10 @@ import time
 import logging
 
 # Set up logging
-from nn2sql.main import pdf_memory
-
 logging.basicConfig(filename='mnist_duckdb.log', level=logging.DEBUG, format='%(asctime)s %(levelname)s:%(message)s')
 
+pdf_memory_path = 'memory_usage_report.pdf'
+pdf_memory = PdfPages(pdf_memory_path)
 
 rep=1
 limit=6000
