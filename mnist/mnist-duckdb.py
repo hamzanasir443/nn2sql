@@ -182,11 +182,8 @@ for atts in attss:
         iterations = int(60 / size)
         logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
         acc = benchmark(atts, size, iterations, learningrate, pdf_memory)
-        if acc is not None:
-            accuracies.append(acc)
-            labels.append(f'atts: {atts}, size: {size}')
-        else:
-            logging.info(f"No accuracy returned for atts: {atts}, size: {size}, iterations: {iterations}")
+        accuracies.append([acc])  # Wrap each accuracy in a list
+        labels.append(f'atts: {atts}, size: {size}')
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
