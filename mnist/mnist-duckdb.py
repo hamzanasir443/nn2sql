@@ -176,14 +176,14 @@ def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
         return None
 
 # Run benchmarks and collect accuracies
-accuracies = []
+accuracies_dict = {}
 for atts in attss:
     for size in sizes:
         iterations = int(60 / size)
         logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
         acc = benchmark(atts, size, iterations, learningrate, pdf_memory)
         if acc is not None:
-            accuracies.append(acc)
+            accuracies_dict[(atts, size)] = acc
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
