@@ -199,7 +199,7 @@ else:
 print(f"Number of accuracies: {len(accuracies)}, Number of labels: {len(labels)}")
 
 # Plotting the box plot for accuracies
-if accuracies and labels:
+if accuracies and len(accuracies) == len(labels):
     plt.figure(figsize=(10, 6))
     plt.boxplot(accuracies, labels=labels)
     plt.xlabel('Configuration')
@@ -209,4 +209,4 @@ if accuracies and labels:
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
-    print("No accuracies or labels to plot.")
+    print("No accuracies or labels to plot, or their lengths do not match.")
