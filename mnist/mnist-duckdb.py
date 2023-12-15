@@ -127,50 +127,63 @@ def monitor_memory_usage(interval=1, duration=60):
         time.sleep(interval)
     return memory_usage
 
-def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory):
+# Function to plot memory usage
+def plot_memory_usage(memory_usage, current_iteration, pdf_memory):
     plt.figure(figsize=(10, 6))
-    plt.plot(memory_usage, label=f'Memory Usage - Atts: {atts}, Limit: {limit}, Iterations: {iterations}, LR: {learning_rate}')
+    plt.plot(memory_usage, label=f'Memory Usage during Iteration {current_iteration} (MB)')
     plt.xlabel('Time (seconds)')
     plt.ylabel('Memory Usage (MB)')
-    plt.title(f'Memory Usage Over Time')
+    plt.title(f'Memory Usage Over Time - Iteration {current_iteration}')
     plt.legend()
     plt.grid(True)
     pdf_memory.savefig()  # Save the current figure to the PDF
-    plt.close()  # Close the figure to free memory
+    plt.close()t.close()  # Close the figure to free memory
 
 pdf_memory_path = 'memory_usage_mnist.pdf'
 pdf_memory = PdfPages(pdf_memory_path)
 
-def benchmark(atts, limit, iterations, learning_rate):
+def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
     try:
+        print(f"Starting benchmark: atts={atts}, limit={limit}, iterations={iterations}, learning_rate={learning_rate}")
         logging.info("Starting benchmark")
         duckdb.sql(createschema)
         duckdb.sql(loadmnist)
         duckdb.sql(loadmnist2)
         duckdb.sql(loadmnistrel)
         duckdb.sql(weights.format(784, atts, atts, 10))
-        loadtime = datetime.now()
         start = datetime.now()
         for i in range(rep):
-            # Start memory monitoring
             memory_usage = monitor_memory_usage(interval=1, duration=60)
             result = duckdb.sql(train.format(learning_rate, iterations) + labelmax).fetchall()
-
-            # Plot and save memory usage data
             plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory)
 
         time_elapsed = (datetime.now() - start).total_seconds() / rep
-        #name, atts, limit, lr, iter, execution_time, accuracy
+        accuracy = result[0][0] if result else None
+        print(f"DuckDB-SQL-92,{atts},{limit},{learning_rate},{iterations},{time_elapsed},{accuracy}")
         logging.info("Benchmark completed successfully")
-        print(f"DuckDB-SQL-92,{atts},{limit},{learning_rate},{iterations},{time_elapsed},{result[0][0]}")
+        return accuracy
     except Exception as e:
         logging.error(f"Error in benchmark: {e}")
+        return None
 
-print("name,atts,limit,lr,iter,execution_time,accuracy")
+# Run benchmarks and collect accuracies
+accuracies = []
 for atts in attss:
     for size in sizes:
         iterations = int(60 / size)
         logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
-        benchmark(atts, size, iterations, learningrate)
+        acc = benchmark(atts, size, iterations, learningrate, pdf_memory)
+        if acc is not None:
+            accuracies.append(acc)
 
 pdf_memory.close()
+
+# Plotting the box plot for accuracies
+plt.figure(figsize=(10, 6))
+plt.boxplot(accuracies, labels=[f'atts: {atts}, size: {size}' for size in sizes for atts in attss])
+plt.xlabel('Configuration')
+plt.ylabel('Accuracy')
+plt.title('Box Plot of Accuracies for Different Configurations')
+plt.grid(True)
+plt.savefig('accuracy_boxplot.pdf')
+plt.close()
