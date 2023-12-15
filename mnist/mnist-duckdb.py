@@ -185,7 +185,12 @@ for atts in attss:
         if acc is not None:
             accuracies.append(acc)
 
-pdf_memory.close()
+# Before closing the PDF, check if any plots were added
+if pdf_memory.get_pagecount() > 0:
+    pdf_memory.close()
+else:
+    pdf_memory.close()
+    print("No plots were added to the PDF. The PDF file will be empty.")
 
 # Plotting the box plot for accuracies
 plt.figure(figsize=(10, 6))
