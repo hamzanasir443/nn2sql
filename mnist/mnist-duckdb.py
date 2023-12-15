@@ -198,6 +198,10 @@ else:
 # Check the lengths of accuracies and labels
 print(f"Number of accuracies: {len(accuracies)}, Number of labels: {len(labels)}")
 
+# Debugging prints
+print("Accuracies:", accuracies)
+print("Labels:", labels)
+
 # Plotting the box plot for accuracies
 if accuracies and len(accuracies) == len(labels):
     plt.figure(figsize=(10, 6))
