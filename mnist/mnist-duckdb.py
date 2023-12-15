@@ -137,7 +137,7 @@ def plot_memory_usage(memory_usage, current_iteration, pdf_memory):
     plt.legend()
     plt.grid(True)
     pdf_memory.savefig()  # Save the current figure to the PDF
-    plt.close()t.close()  # Close the figure to free memory
+    plt.close()  # Close the figure to free memory
 
 pdf_memory_path = 'memory_usage_mnist.pdf'
 pdf_memory = PdfPages(pdf_memory_path)
