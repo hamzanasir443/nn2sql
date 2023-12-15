@@ -194,7 +194,13 @@ else:
 
 # Plotting the box plot for accuracies
 plt.figure(figsize=(10, 6))
-plt.boxplot(accuracies, labels=[f'atts: {atts}, size: {size}' for size in sizes for atts in attss])
+
+# Extract accuracies and corresponding labels from the dictionary
+accuracies_values = list(accuracies_dict.values())
+accuracies_labels = [f'atts: {atts}, size: {size}' for (atts, size), acc in accuracies_dict.items()]
+
+# Plot boxplot using the extracted values and labels
+plt.boxplot(accuracies_values, labels=accuracies_labels)
 plt.xlabel('Configuration')
 plt.ylabel('Accuracy')
 plt.title('Box Plot of Accuracies for Different Configurations')
