@@ -20,10 +20,10 @@ sizes=[200,20]
 attss=[20]
 learningrate=0.01
 
-db_file_path = 'mnist.duckdb'
+db_file_path = 'mnist_train.csv'
 
 # Establish connection with DuckDB using file-based storage
-con = duckdb.connect(db_file_path)
+con = duckdb.connect(':memory:')  # In-memory database
 
 createschema = '''
 drop table if exists img;
@@ -146,24 +146,30 @@ def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_
 def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
     try:
         print(f"Starting benchmark: atts={atts}, limit={limit}, iterations={iterations}, learning_rate={learning_rate}")
-        logging.info("Starting benchmark")
-        duckdb.sql(createschema)
-        duckdb.sql(loadmnist)
-        duckdb.sql(loadmnist2)
-        duckdb.sql(loadmnistrel)
-        duckdb.sql(weights.format(784, atts, atts, 10))
+        con.execute(createschema)
+        con.execute(loadmnist)
+        con.execute(loadmnist2)
+        con.execute(loadmnistrel)
+        con.execute(weights.format(784, atts, atts, 10))
+
         start = datetime.now()
         for i in range(rep):
             memory_usage = monitor_memory_usage(interval=1, duration=60)
-            result = duckdb.sql(train.format(learning_rate, iterations) + labelmax).fetchall()
+            result = con.execute(train.format(learning_rate, iterations) + labelmax).fetchall()
             plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory)
+            print(f"Query result: {result}")
 
-        time_elapsed = (datetime.now() - start).total_seconds() / rep
-        accuracy = result[0][0] if result else None
-        print(f"DuckDB-SQL-92,{atts},{limit},{learning_rate},{iterations},{time_elapsed},{accuracy}")
+            if result and result[0]:
+                accuracy = result[0][0]
+                print(f"Accuracy: {accuracy}")
+                return accuracy
+            else:
+                print("No result or invalid result from SQL query.")
+                return None
+
         logging.info("Benchmark completed successfully")
-        return accuracy
     except Exception as e:
+        print(f"Error in benchmark: {e}")
         logging.error(f"Error in benchmark: {e}")
         return None
 # Initialize accuracies and labels lists before the benchmark loop
