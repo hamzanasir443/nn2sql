@@ -129,8 +129,9 @@ def monitor_memory_usage(interval=1, duration=60):
         time.sleep(interval)
     return memory_usage
 
-# Function to plot memory usage
 def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory):
+    print(f"Plotting memory usage for atts={atts}, limit={limit}, iterations={iterations}, learning_rate={learning_rate}")
+    print(f"Memory usage data: {memory_usage}")
     if memory_usage:  # Check if there is data to plot
         plt.figure(figsize=(10, 6))
         plt.plot(memory_usage, label=f'Memory Usage - Atts: {atts}, Limit: {limit}, Iterations: {iterations}, LR: {learning_rate}')
@@ -141,15 +142,6 @@ def plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_
         plt.grid(True)
         pdf_memory.savefig()  # Save the current figure to the PDF
         plt.close()
-
-# ... [benchmark function and other code] ...
-
-# Before closing the PDF, check if any plots were added
-if pdf_memory.get_pagecount() > 0:
-    pdf_memory.close()
-else:
-    pdf_memory.close()
-    print("No plots were added to the PDF. The PDF file will be empty.")
 
 def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
     try:
@@ -174,36 +166,41 @@ def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
     except Exception as e:
         logging.error(f"Error in benchmark: {e}")
         return None
+# Initialize accuracies and labels lists before the benchmark loop
+accuracies = []
+labels = []
 
 # Run benchmarks and collect accuracies
-accuracies_dict = {}
 for atts in attss:
     for size in sizes:
         iterations = int(60 / size)
         logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
         acc = benchmark(atts, size, iterations, learningrate, pdf_memory)
         if acc is not None:
-            accuracies_dict[(atts, size)] = acc
+            accuracies.append(acc)
+            labels.append(f'atts: {atts}, size: {size}')
+        else:
+            logging.info(f"No accuracy returned for atts: {atts}, size: {size}, iterations: {iterations}")
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
     pdf_memory.close()
 else:
-    pdf_memory.close()
     print("No plots were added to the PDF. The PDF file will be empty.")
+    pdf_memory.close()
+
+# Check the lengths of accuracies and labels
+print(f"Number of accuracies: {len(accuracies)}, Number of labels: {len(labels)}")
 
 # Plotting the box plot for accuracies
-plt.figure(figsize=(10, 6))
-
-# Extract accuracies and corresponding labels from the dictionary
-accuracies_values = list(accuracies_dict.values())
-accuracies_labels = [f'atts: {atts}, size: {size}' for (atts, size), acc in accuracies_dict.items()]
-
-# Plot boxplot using the extracted values and labels
-plt.boxplot(accuracies_values, labels=accuracies_labels)
-plt.xlabel('Configuration')
-plt.ylabel('Accuracy')
-plt.title('Box Plot of Accuracies for Different Configurations')
-plt.grid(True)
-plt.savefig('accuracy_boxplot.pdf')
-plt.close()
+if accuracies and labels:
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(accuracies, labels=labels)
+    plt.xlabel('Configuration')
+    plt.ylabel('Accuracy')
+    plt.title('Box Plot of Accuracies for Different Configurations')
+    plt.grid(True)
+    plt.savefig('accuracy_boxplot.pdf')
+    plt.close()
+else:
+    print("No accuracies or labels to plot.")
