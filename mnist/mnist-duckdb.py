@@ -176,6 +176,7 @@ accuracies = []
 labels = []
 
 # Run benchmarks and collect accuracies
+
 for atts in attss:
     for size in sizes:
         for lr in learning_rates:
@@ -203,7 +204,7 @@ print("Accuracies:", accuracies)
 print("Labels:", labels)
 
 # Plotting the box plot for accuracies
-if accuracies and len(accuracies) == len(labels):
+if len(accuracies) == len(labels):
     plt.figure(figsize=(12, 6))
     plt.boxplot(accuracies, labels=labels)
     plt.xticks(rotation=45)
@@ -215,4 +216,4 @@ if accuracies and len(accuracies) == len(labels):
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
-    print("No accuracies or labels to plot, or their lengths do not match.")
+    print("Mismatch in the length of accuracies and labels.")
