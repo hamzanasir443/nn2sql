@@ -203,17 +203,19 @@ print(f"Number of accuracies: {len(accuracies)}, Number of labels: {len(labels)}
 print("Accuracies:", accuracies)
 print("Labels:", labels)
 
-# Plotting the box plot for accuracies
-if len(accuracies) == len(labels):
-    plt.figure(figsize=(12, 6))
-    plt.boxplot(accuracies, labels=labels)
-    plt.xticks(rotation=45)
+accuracies_2d = [[acc] for acc in accuracies]
+
+# Check if there are accuracies to plot
+if accuracies_2d:
+    plt.figure(figsize=(12, 6))  # Adjust the figure size if necessary
+    plt.boxplot(accuracies_2d, labels=labels)
+    plt.xticks(rotation=45)  # Rotate labels for better readability
     plt.xlabel('Configuration')
     plt.ylabel('Accuracy')
     plt.title('Box Plot of Accuracies for Different Configurations')
     plt.grid(True)
-    plt.tight_layout()
+    plt.tight_layout()  # Adjust layout
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
-    print("No accuracies or labels to plot, or their lengths do not match.")
+    print("No accuracies to plot.")
