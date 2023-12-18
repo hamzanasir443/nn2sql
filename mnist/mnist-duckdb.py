@@ -16,9 +16,9 @@ pdf_memory = PdfPages(pdf_memory_path)
 
 rep=1
 limit=6000
-sizes=[200,100,50]
-attss=[15]
-learning_rates=[0.1 , 0.01]
+sizes=[500,250,50]
+attss=[20,30]
+learning_rates=[0.1 , 0.05]
 
 db_file_path = 'mnist_train.csv'
 
@@ -176,15 +176,15 @@ accuracies = []
 labels = []
 
 # Run benchmarks and collect accuracies
-for lr in learning_rates:
-    for atts in attss:
-        for size in sizes:
+for atts in attss:
+    for size in sizes:
+        for lr in learning_rates:
             iterations = int(60 / size)
-            logging.info(f"Running for atts: {atts}, size: {size}, LR: {lr}, iterations: {iterations}")
-            acc = benchmark(atts, size, iterations, lr, pdf_memory)
+            logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}, LR: {lr}")
+            acc, label = benchmark(atts, size, iterations, lr, pdf_memory)
             if acc is not None:
-                accuracies.append([acc])  # Wrap each accuracy in a list
-                labels.append(f'atts: {atts}, size: {size}, LR: {lr}')
+                accuracies.append(acc)
+                labels.append(label)
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
@@ -202,12 +202,14 @@ print("Labels:", labels)
 
 # Plotting the box plot for accuracies
 if accuracies and len(accuracies) == len(labels):
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 6))  # Adjust figure size if necessary
     plt.boxplot(accuracies, labels=labels)
+    plt.xticks(rotation=45)  # Rotate labels for better readability
     plt.xlabel('Configuration')
     plt.ylabel('Accuracy')
     plt.title('Box Plot of Accuracies for Different Configurations')
     plt.grid(True)
+    plt.tight_layout()  # Adjust layout
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
