@@ -181,7 +181,7 @@ for atts in attss:
         for lr in learning_rates:
             iterations = int(60 / size)
             logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}, LR: {lr}")
-            acc, label = benchmark(atts, size, iterations, lr, pdf_memory)
+            acc = benchmark(atts, size, iterations, lr, pdf_memory)
             if acc is not None:
                 accuracies.append(acc)
                 labels.append(label)
