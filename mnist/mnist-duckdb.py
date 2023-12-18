@@ -17,7 +17,7 @@ pdf_memory = PdfPages(pdf_memory_path)
 rep=1
 limit=6000
 sizes=[500,250,50]
-attss=[20,30]
+attss=[20,10]
 learning_rates=[0.1 , 0.01]
 
 db_file_path = 'mnist_train.csv'
