@@ -181,10 +181,12 @@ for atts in attss:
         for lr in learning_rates:
             iterations = int(60 / size)
             logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}, LR: {lr}")
-            acc, label = benchmark(atts, size, iterations, lr, pdf_memory)
+            acc = benchmark(atts, size, iterations, lr, pdf_memory)
             if acc is not None:
                 accuracies.append(acc)
+                label = f"atts={atts}, size={size}, LR={lr}"
                 labels.append(label)
+
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
@@ -202,14 +204,14 @@ print("Labels:", labels)
 
 # Plotting the box plot for accuracies
 if accuracies and len(accuracies) == len(labels):
-    plt.figure(figsize=(12, 6))  # Adjust figure size if necessary
+    plt.figure(figsize=(12, 6))
     plt.boxplot(accuracies, labels=labels)
-    plt.xticks(rotation=45)  # Rotate labels for better readability
+    plt.xticks(rotation=45)
     plt.xlabel('Configuration')
     plt.ylabel('Accuracy')
     plt.title('Box Plot of Accuracies for Different Configurations')
     plt.grid(True)
-    plt.tight_layout()  # Adjust layout
+    plt.tight_layout()
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
