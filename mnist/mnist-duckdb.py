@@ -18,7 +18,7 @@ rep=1
 limit=6000
 sizes=[200,100,50]
 attss=[15]
-learning_rate=[0.1,0.01]
+learning_rates=[0.1 , 0.01]
 
 db_file_path = 'mnist_train.csv'
 
