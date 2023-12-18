@@ -18,7 +18,7 @@ rep=1
 limit=6000
 sizes=[500,250,50]
 attss=[20,30]
-learning_rates=[0.1 , 0.05]
+learning_rates=[0.1 , 0.01]
 
 db_file_path = 'mnist_train.csv'
 
@@ -216,8 +216,4 @@ if len(accuracies) == len(labels):
     plt.savefig('accuracy_boxplot.pdf')
     plt.close()
 else:
-<<<<<<< HEAD
     print("No accuracies or labels to plot, or their lengths do not match.")
-=======
-    print("Mismatch in the length of accuracies and labels.")
->>>>>>> aba818f6a9dea6dd1247b572024ba3031e549258
