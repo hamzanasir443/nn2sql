@@ -157,7 +157,6 @@ def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
             memory_usage = monitor_memory_usage(interval=1, duration=60)
             result = con.execute(train.format(learning_rate, iterations) + labelmax).fetchall()
             plot_memory_usage(memory_usage, atts, limit, iterations, learning_rate, pdf_memory)
-            print(f"Query result: {result}")
 
             if result and result[0]:
                 accuracy = result[0][0]
@@ -166,24 +165,26 @@ def benchmark(atts, limit, iterations, learning_rate, pdf_memory):
             else:
                 print("No result or invalid result from SQL query.")
                 return None
-
         logging.info("Benchmark completed successfully")
     except Exception as e:
         print(f"Error in benchmark: {e}")
         logging.error(f"Error in benchmark: {e}")
         return None
-# Initialize accuracies and labels lists before the benchmark loop
+
+# Initialize accuracies and labels lists
 accuracies = []
 labels = []
 
 # Run benchmarks and collect accuracies
-for atts in attss:
-    for size in sizes:
-        iterations = int(60 / size)
-        logging.info(f"Running for atts: {atts}, size: {size}, iterations: {iterations}")
-        acc = benchmark(atts, size, iterations, learningrate, pdf_memory)
-        accuracies.append([acc])  # Wrap each accuracy in a list
-        labels.append(f'atts: {atts}, size: {size}')
+for lr in learning_rates:
+    for atts in attss:
+        for size in sizes:
+            iterations = int(60 / size)
+            logging.info(f"Running for atts: {atts}, size: {size}, LR: {lr}, iterations: {iterations}")
+            acc = benchmark(atts, size, iterations, lr, pdf_memory)
+            if acc is not None:
+                accuracies.append([acc])  # Wrap each accuracy in a list
+                labels.append(f'atts: {atts}, size: {size}, LR: {lr}')
 
 # Before closing the PDF, check if any plots were added
 if pdf_memory.get_pagecount() > 0:
